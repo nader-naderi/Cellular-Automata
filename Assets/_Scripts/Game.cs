@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+
 namespace NDRCellularAutomata
 {
     public class Game : MonoBehaviour
@@ -22,7 +23,7 @@ namespace NDRCellularAutomata
 
         private void Start()
         {
-            PlaceCells();
+            PlaceCells(1);
         }
 
         private void Update()
@@ -38,15 +39,48 @@ namespace NDRCellularAutomata
         }
 
 
-        void PlaceCells()
+        void PlaceCells(int type)
         {
-            for (int y = 0; y < SCREEN_HEIGHT; y++)
+            if (type == 1)
             {
-                for (int x = 0; x < SCREEN_WIDTH; x++)
+                for (int y = 0; y < SCREEN_HEIGHT; y++)
                 {
-                    Cell cell = Instantiate(Resources.Load("Prefabs/Cell", typeof(Cell)), new Vector2(x, y), Quaternion.identity) as Cell;
-                    grid[x, y] = cell;
-                    grid[x, y].SetAlive(GetRandomAliveCell());
+                    for (int x = 0; x < SCREEN_WIDTH; x++)
+                    {
+                        Cell cell = Instantiate(Resources.Load("Prefabs/Cell", typeof(Cell)), new Vector2(x, y), Quaternion.identity) as Cell;
+                        grid[x, y] = cell;
+                        grid[x, y].SetAlive(false);
+                    }
+                }
+
+                for (int y = 21; y < 24; y++)
+                {
+                    for (int x = 31; x < 38; x++)
+                    {
+                        if (x != 34)
+                        {
+                            if (y == 21 || y == 23)
+                            {
+                                grid[x, y].SetAlive(true);
+                            }
+                            else if (y == 22 && ((x != 32) && x != 36))
+                            {
+                                grid[x, y].SetAlive(true);
+                            }
+                        }
+                    }
+                }
+            }
+            else if (type == 2)
+            {
+                for (int y = 0; y < SCREEN_HEIGHT; y++)
+                {
+                    for (int x = 0; x < SCREEN_WIDTH; x++)
+                    {
+                        Cell cell = Instantiate(Resources.Load("Prefabs/Cell", typeof(Cell)), new Vector2(x, y), Quaternion.identity) as Cell;
+                        grid[x, y] = cell;
+                        grid[x, y].SetAlive(GetRandomAliveCell());
+                    }
                 }
             }
         }
