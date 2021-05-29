@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.IO;
 using System.Xml.Serialization;
+using UnityEngine.SceneManagement;
 
 namespace NDRCellularAutomata
 {
@@ -27,10 +28,22 @@ namespace NDRCellularAutomata
 
         private void Start()
         {
+           
+        }
+        public void PatternEditor()
+        {
             EventManager.StartListining("SavePattern", SavePattern);
             EventManager.StartListining("LoadPattern", LoadPattern);
 
             PlaceCells(1);
+        }
+
+        public void RandomizeWorld()
+        {
+            EventManager.StartListining("SavePattern", SavePattern);
+            EventManager.StartListining("LoadPattern", LoadPattern);
+
+            PlaceCells(2);
         }
 
         private void Update()
@@ -178,6 +191,11 @@ namespace NDRCellularAutomata
             {
                 // Load Pattern.
                 UIManager.instance.ShowLoadDialog();
+            }
+
+            if(Input.GetKeyDown(KeyCode.Escape))
+            {
+                SceneManager.LoadScene("MainMenu");
             }
         }
 
