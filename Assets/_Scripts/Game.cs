@@ -1,6 +1,8 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using System.IO;
+using System.Xml.Serialization;
 
 namespace NDRCellularAutomata
 {
@@ -17,27 +19,167 @@ namespace NDRCellularAutomata
 
         [SerializeField] float speed = 0.1f;
 
+        [SerializeField] bool simulationEnabled = false;
+
         Cell[,] grid = new Cell[SCREEN_WIDTH, SCREEN_HEIGHT];
 
         private float timer = 0;
 
         private void Start()
         {
+            EventManager.StartListining("SavePattern", SavePattern);
+            EventManager.StartListining("LoadPattern", LoadPattern);
+
             PlaceCells(1);
         }
 
         private void Update()
         {
-            if (timer >= speed)
+            if (simulationEnabled)
             {
-                CountNeighbors();
-                PopulationControl();
-                timer = 0;
+                if (timer >= speed)
+                {
+                    CountNeighbors();
+                    PopulationControl();
+                    timer = 0;
+                }
+                else
+                    timer += Time.deltaTime;
             }
-            else
-                timer += Time.deltaTime;
+
+            UserInput();
         }
 
+        private void LoadPattern()
+        {
+            string path = "pattern";
+
+            if(!Directory.Exists(path))
+            {
+                return;
+            }
+
+            XmlSerializer serializer = new XmlSerializer(typeof(Pattern));
+
+            string patternName = UIManager.instance.LoadDialog.PatternName.options[UIManager.instance.LoadDialog.PatternName.value].text;
+
+            path = path + "/" + patternName + ".xml";
+
+            StreamReader reader = new StreamReader(path);
+
+            Pattern pattern = (Pattern)serializer.Deserialize(reader.BaseStream);
+            
+            reader.Close();
+
+            bool isAlive;
+
+            int x = 0, y = 0;
+
+            foreach (char c in pattern.patternString)
+            {
+                if (c.ToString() == "1")
+                {
+                    isAlive = true;
+                }
+                else
+                {
+                    isAlive = false;
+                }
+
+                grid[x, y].SetAlive(isAlive);
+
+                x++;
+
+                if(x == SCREEN_WIDTH)
+                {
+                    x = 0;
+                    y++;
+                }
+            }
+        }
+
+        private void SavePattern()
+        {
+            string path = "pattern";
+
+            if(!Directory.Exists(path))
+            {
+                Directory.CreateDirectory(path);
+            }
+
+            Pattern pattern = new Pattern();
+
+            string patternString = null;
+
+            for (int y = 0; y < SCREEN_HEIGHT; y++)
+            {
+                for (int x = 0; x < SCREEN_WIDTH; x++)
+                {
+                    if (!grid[x, y].isAlive)
+                    {
+                        patternString += "0";
+                    }
+                    else
+                    {
+                        patternString += "1";
+                    }
+                }
+            }
+
+            pattern.patternString = patternString;
+
+            XmlSerializer serializer = new XmlSerializer(typeof(Pattern));
+
+            StreamWriter writer = new StreamWriter(path + "/" + UIManager.instance.SaveDialog.PatternInout.text + ".xml");
+            serializer.Serialize(writer.BaseStream, pattern);
+
+            writer.Close();
+
+            Debug.Log(pattern.patternString);
+        }
+
+        void UserInput()
+        {
+            if (!UIManager.instance.IsActive)
+            {
+                if (Input.GetMouseButtonDown(0))
+                {
+                    Vector2 mousePoint = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+
+                    int x = Mathf.RoundToInt(mousePoint.x);
+                    int y = Mathf.RoundToInt(mousePoint.y);
+
+                    if (x >= 0 && y >= 0 && x < SCREEN_WIDTH && y < SCREEN_HEIGHT)
+                    {
+                        grid[x, y].SetAlive(!grid[x, y].isAlive);
+                    }
+                }
+            }
+
+            if(Input.GetKeyUp(KeyCode.P))
+            {
+                // Pause Simulation.
+                simulationEnabled = false;
+            }
+
+            if(Input.GetKeyUp(KeyCode.B))
+            {
+                // Build Simulation.
+                simulationEnabled = true;
+            }
+
+            if(Input.GetKeyUp(KeyCode.S))
+            {
+                // Save Pattern.
+                UIManager.instance.ShowSaveDialog();
+            }
+
+            if(Input.GetKeyUp(KeyCode.L))
+            {
+                // Load Pattern.
+                UIManager.instance.ShowLoadDialog();
+            }
+        }
 
         void PlaceCells(int type)
         {
